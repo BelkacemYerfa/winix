@@ -24,6 +24,10 @@ fn main() {
                     exit_code.parse::<i32>().unwrap()
                 )
             }
+            input if input.starts_with("echo") => {
+                let echo_data = input.split("echo").collect::<Vec<&str>>()[1].replacen(" ", "" , 1);
+                println!("{}", echo_data);
+            }
 
             _ => {
                 println!("{}: command not found" , input.trim());
