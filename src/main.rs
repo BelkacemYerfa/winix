@@ -28,6 +28,16 @@ fn main() {
                 let echo_data = input.split("echo").collect::<Vec<&str>>()[1].replacen(" ", "" , 1);
                 println!("{}", echo_data);
             }
+            input if input.starts_with("type") => {
+                let typed_command = input.split(" ").collect::<Vec<&str>>()[1];
+
+                if typed_command == "exit" || typed_command == "echo" || typed_command == "type" {
+                    println!("{typed_command} is a shell builtin")
+                } else {
+                    println!("{typed_command}: not found");
+                }
+
+            }
 
             _ => {
                 println!("{}: command not found" , input.trim());
