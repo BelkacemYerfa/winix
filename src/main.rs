@@ -68,7 +68,7 @@ fn main() {
 
         match command.as_str() {
             "exit" => {
-                let exit_code = &inputs[1];
+                let exit_code = inputs[1];
                 process::exit(
                     exit_code.parse::<i32>().unwrap()
                 )
@@ -102,6 +102,20 @@ fn main() {
                 } else {
                     println!("{}", current_dir.unwrap().display());
                 }
+            },
+
+            "cd" => {
+                let absolute_path = &inputs[1..].join(" ");
+                let path = PathBuf::new().join(absolute_path);
+                let current_dir = env::set_current_dir(
+                    path
+                );
+                if current_dir.is_err() {
+                    println!("There was an issue printing the current working dir");
+                } else {
+                    println!("{}", env::current_dir().unwrap().display());
+                }
+
             }
 
             _ => {
