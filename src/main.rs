@@ -81,7 +81,7 @@ fn main() {
                 let typed_command = inputs[1];
 
                 match typed_command {
-                    "exit" | "echo" | "type" | "pwd" => {
+                    "exit" | "echo" | "type" | "pwd" | "cd" => {
                         println!("{typed_command} is a shell builtin")
                     },
                     _ => {
@@ -111,7 +111,7 @@ fn main() {
                     path
                 );
                 if current_dir.is_err() {
-                    println!("There was an issue printing the current working dir");
+                    println!("cd: {absolute_path} : No such file or directory");
                 } else {
                     println!("{}", env::current_dir().unwrap().display());
                 }
