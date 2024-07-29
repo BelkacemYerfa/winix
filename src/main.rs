@@ -55,23 +55,33 @@ fn main() {
         let stdin = io::stdin();
         let mut input = String::new();
         stdin.read_line(&mut input).unwrap();
-        input = input.trim().to_string().to_lowercase();
-        match input {
-            input if input.starts_with("exit") => {
-                let exit_code = input.split("exit").collect::<Vec<&str>>()[1].replace(" ", "");
+
+        let inputs = input.trim().split(" ").filter(
+            |inp| inp.len() > 0
+        ).collect::<Vec<&str>>();
+
+        if input.len() == 0 {
+            continue;
+        }
+
+        let command = inputs[0].to_lowercase();
+
+        match command.as_str() {
+            "exit" => {
+                let exit_code = &inputs[1];
                 process::exit(
                     exit_code.parse::<i32>().unwrap()
                 )
             }
-            input if input.starts_with("echo") => {
-                let echo_data = input.split("echo").collect::<Vec<&str>>()[1].replacen(" ", "" , 1);
+            "echo" => {
+                let echo_data = &inputs[1..].join(" ");
                 println!("{}", echo_data);
             }
-            input if input.starts_with("type") => {
-                let typed_command = input.split(" ").collect::<Vec<&str>>()[1];
+            "type" => {
+                let typed_command = inputs[1];
 
                 match typed_command {
-                    "exit" | "echo" | "type" => {
+                    "exit" | "echo" | "type" | "pwd" => {
                         println!("{typed_command} is a shell builtin")
                     },
                     _ => {
@@ -83,15 +93,23 @@ fn main() {
                         }
                     }
                 }
+            },
+
+            "pwd" => {
+                let current_dir = env::current_dir();
+                if current_dir.is_err() {
+                    println!("There was an issue printing the current working dir");
+                } else {
+                    println!("{}", current_dir.unwrap().display());
+                }
             }
 
             _ => {
-                let inputs = input.split(" ").collect::<Vec<&str>>();
-                let target_path = find_it(inputs[0]);
+                let target_path = find_it(&command);
                 if target_path.is_none() {
-                    println!("{}: not found", inputs[0]);
+                    println!("{}: not found", command);
                 } else {
-                    let output = Command::new   (inputs[0])
+                    let output = Command::new   (command)
                         .args(&inputs[1..])
                         .output()
                         .expect("there was an issue executing u're program");
