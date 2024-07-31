@@ -1,6 +1,6 @@
 #[allow(unused_imports)]
 use std::io::{self, Write};
-use std::{env, path::{Path, PathBuf}, process::{self, Command}};
+use std::{env::{self, current_dir}, future, path::{Path, PathBuf}, process::{self, Command, Stdio}};
 use std::borrow::Cow;
 
 mod test;
@@ -47,8 +47,14 @@ fn main() {
             })
         }
 
+
     loop {
-        print!("$ ");
+        let current_dir = env::current_dir();
+        if current_dir.is_err() {
+            println!("$ ");
+        } else {
+            print!("$ {}>", current_dir.unwrap().display());
+        }
         io::stdout().flush().unwrap();
 
         // Wait for user input
@@ -89,7 +95,7 @@ fn main() {
                         if target_path.is_none() {
                             println!("{typed_command}: not found");
                         } else {
-                            println!("{:?}", target_path.unwrap());
+                            println!("{}", target_path.unwrap().display());
                         }
                     }
                 }
@@ -105,15 +111,54 @@ fn main() {
             },
 
             "cd" => {
-                let absolute_path = &inputs[1..].join(" ");
-                let path = PathBuf::new().join(absolute_path);
-                let current_dir = env::set_current_dir(
-                    path
-                );
-                if current_dir.is_err() {
-                    println!("cd: {absolute_path} : No such file or directory");
+                let _path = &inputs[1..].join(" ");
+                // * with a relative path we can use grab the current dir and join it with the given one
+                if _path.starts_with("C:") {
+                    let path = PathBuf::new().join(_path);
+                    match env::set_current_dir(&path) {
+                        Err(err) => println!("Failed to set current directory: {}", err),
+                        _ => {},
+                    }
+                } else if _path.starts_with(".") {
+                    input = input.replace("cd ", "");
+                    let mut path_cpm = input.split("\\").collect::<Vec<&str>>();
+                    let main_path =  env::current_dir();
+                    match main_path {
+                        Err(err) => println!("issue reading the current active path {:#?}", err),
+                        Ok(path) => {
+                            let main_path = path.to_string_lossy().to_string();
+                            let mut current_dir = main_path.split("\\").collect::<Vec<&str>>();
+                            loop {
+                                if !path_cpm.contains(&".") && !path_cpm.contains(&"..") {
+                                    break;
+                                }
+                                for i in 0..path_cpm.len() - 1 {
+                                    match path_cpm[i] {
+                                        "." => {
+                                            path_cpm.remove(i);
+                                        }
+                                        ".." => {
+                                            path_cpm.remove(i);
+                                            if !current_dir.is_empty() {
+                                                current_dir.pop();
+                                            }
+                                        }
+                                        _ => {}
+                                    }
+                                }
+                            }
+
+                            let relative_path = path_cpm.join("\\");
+                            current_dir.push(&relative_path);
+                            let path = PathBuf::new().join(current_dir.join("\\").trim());
+                            match env::set_current_dir(&path) {
+                                Err(err) => println!("Failed to set current directory: {}", err),
+                                _ => {},
+                            }
+                        }
+                    }
                 } else {
-                    println!("{}", env::current_dir().unwrap().display());
+                    println!("cd: {_path} : No such file or directory");
                 }
 
             }
@@ -125,6 +170,7 @@ fn main() {
                 } else {
                     let output = Command::new   (command)
                         .args(&inputs[1..])
+                        .stdout(Stdio::piped())
                         .output()
                         .expect("there was an issue executing u're program");
                     if output.status.success() {
