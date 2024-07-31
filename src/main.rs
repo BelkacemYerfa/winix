@@ -157,6 +157,13 @@ fn main() {
                             }
                         }
                     }
+                } else if _path.starts_with("~") {
+                    let home_dir = env::var_os("UserProfile");
+                    let path = PathBuf::new().join(home_dir.unwrap());
+                    match env::set_current_dir(&path) {
+                        Err(err) => println!("Failed to set current directory: {}", err),
+                        _ => {},
+                    }
                 } else {
                     println!("cd: {_path} : No such file or directory");
                 }
@@ -169,12 +176,12 @@ fn main() {
                     println!("{}: not found", command);
                 } else {
                     let output = Command::new   (command)
-                        .args(&inputs[1..])
+                        .arg(&inputs[1..].join(" "))
                         .stdout(Stdio::piped())
                         .output()
                         .expect("there was an issue executing u're program");
                     if output.status.success() {
-                        println!("{}", String::from_utf8(output.stdout).unwrap());
+                        print!("{}", String::from_utf8(output.stdout).unwrap());
                     }
                 }
             }
